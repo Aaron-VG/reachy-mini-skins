@@ -2,9 +2,9 @@
 
 * Chestnut burr antennas ("eriçons"): the antenna mount (disc + neck) is taken
   from the official pumpkin bat-wing antennas, so they clip on the same way.
-  The burr itself is a flat-backed spiky medallion, split open at the front to
-  show a chestnut. It stays inside the z range of the bat wing (-13.2..0 mm)
-  so it does not get closer to the head than the original part.
+  A brown stem ends in a closed burr, as it grows on the tree: a flat-backed
+  dome covered in small blunt spikes. It stays inside the z range of the bat
+  wing (-13.2..0 mm) so it does not get closer to the head than the original.
 * Chestnut tip ("la punta"): sits on top of the head like the pumpkin stem,
   reusing the stem's base so it follows the shape of the head.
 
@@ -30,9 +30,11 @@ MOUNT_CUT_Y = 14.0                 # keep the bat-wing mount below this height
 NECK = (1.2, 12.0)                 # x, y of the mount neck
 NECK_Z = (-9.7, -4.1)
 BURR_C = (7.0, 70.0)               # burr centre (x, y)
-BURR_R = 14.5
-SPIKES, SPIKE_LEN = 14, 7.5
-OPEN_R = 8.0                       # front opening that shows the chestnut
+BURR_R = 14.0                      # husk radius in the antenna plane
+BURR_H = 9.6                       # husk height above the flat back
+N_SPIKES = 190
+SPIKE_LEN, SPIKE_R = 3.4, 0.75     # small, blunt spikes (printable, not sharp)
+STEM_END = (BURR_C[0] - 0.5, BURR_C[1] - BURR_R + 1.5)   # the stalk enters the burr here
 
 
 def seg_dist(px, py, ax, ay, bx, by):
@@ -41,50 +43,66 @@ def seg_dist(px, py, ax, ay, bx, by):
     return np.hypot(px - ax - t * vx, py - ay - t * vy)
 
 
+def spike_points():
+    """Spike roots spread evenly over the domed husk, with their normals."""
+    k = np.arange(N_SPIKES) + 0.5
+    uz = 1 - k / N_SPIKES                      # upper hemisphere only
+    phi = k * np.pi * (3 - np.sqrt(5))         # golden angle
+    rho = np.sqrt(1 - uz ** 2)
+    u = np.c_[rho * np.cos(phi), rho * np.sin(phi), uz]
+    root = np.c_[BURR_C[0] + BURR_R * u[:, 0], BURR_C[1] + BURR_R * u[:, 1], Z_BACK + BURR_H * u[:, 2]]
+    n = np.c_[u[:, 0] / BURR_R, u[:, 1] / BURR_R, u[:, 2] / BURR_H]
+    n /= np.linalg.norm(n, axis=1, keepdims=True)
+    # no spikes where the stem joins the husk
+    free = np.hypot(root[:, 0] - BURR_C[0], root[:, 1] - STEM_END[1]) > 5.0
+    root, n = root[free], n[free]
+    # spikes may not poke out of the bat-wing thickness range
+    length = np.minimum(SPIKE_LEN, (Z_FRONT - 0.3 - root[:, 2]) / np.maximum(n[:, 2], 1e-3))
+    return root, n, length
+
+
+SPIKE_ROOT, SPIKE_N, SPIKE_L = spike_points()
+
+
 def burr_field(X, Y, Z):
-    dx, dy = X - BURR_C[0], Y - BURR_C[1]
-    r = np.hypot(dx, dy)
-    th = np.arctan2(dy, dx)
+    from scipy.spatial import cKDTree
+    X, Y, Z = np.broadcast_arrays(X, Y, Z)
+    P = np.stack([X, Y, Z], -1).reshape(-1, 3)
 
-    # domed husk, flat back
-    rr = np.clip(r / BURR_R, 0, 1)
-    z_top = Z_BACK + 11.0 * np.sqrt(1 - rr ** 2) + 0.6
-    husk = np.maximum(r - BURR_R, Z - np.minimum(z_top, Z_FRONT - 1.0))
+    # closed husk: half ellipsoid on the flat back
+    e = np.sqrt(((P[:, 0] - BURR_C[0]) / BURR_R) ** 2 + ((P[:, 1] - BURR_C[1]) / BURR_R) ** 2
+                + ((P[:, 2] - Z_BACK) / BURR_H) ** 2)
+    F = (e - 1) * BURR_H
 
-    # star of rim spikes, full height at the base so they print flat
-    phase = np.abs(((th * SPIKES / (2 * np.pi)) % 1.0) - 0.5) * 2      # 1 at spike axis
-    r_star = BURR_R - 2 + SPIKE_LEN * phase ** 3
-    z_spike = Z_BACK + 7.5 - 0.45 * np.maximum(r - BURR_R, 0)
-    spikes = np.maximum(r - r_star, Z - z_spike)
-    F = np.minimum(husk, spikes)
+    # little spikes all over it (only the 3 nearest ones matter)
+    near = e < 1 + (SPIKE_LEN + 1) / BURR_H
+    if near.any():
+        q = P[near]
+        _, idx = cKDTree(SPIKE_ROOT).query(q, k=3)
+        best = np.full(len(q), 1e3)
+        for c in range(3):
+            i = idx[:, c]
+            v = q - SPIKE_ROOT[i]
+            h = np.einsum("ij,ij->i", v, SPIKE_N[i])
+            rad = np.linalg.norm(v - h[:, None] * SPIKE_N[i], axis=1)
+            L = SPIKE_L[i]
+            cone = np.maximum(rad - SPIKE_R * np.clip(1 - h / L, 0, 1) - 0.25, np.maximum(h - L, -h - 1.0))
+            best = np.minimum(best, cone)
+        F[near] = np.minimum(F[near], best)
 
-    # prickly texture on the dome
-    prick = np.maximum(np.sin(dx * 1.1) * np.sin(dy * 1.1) + np.sin((dx + dy) * 0.8) * 0.4, 0)
-    F -= 0.9 * prick * smoothstep(BURR_R * 0.55, BURR_R * 0.75, r) * (1 - smoothstep(BURR_R - 1, BURR_R, r))
-
-    # husk split open in four valves at the front
-    r_open = OPEN_R + 2.8 * np.cos(4 * th + np.pi / 4)
-    F = np.maximum(F, -np.maximum(r_open - r, (Z_BACK + 6.0) - Z))
-    # the chestnut inside, with a small pointed tip
-    cy = BURR_C[1] - 0.5
-    ty = np.clip((Y - cy) / 9.0, -1, 1)
-    half_w = 7.5 * (1 - 0.35 * np.maximum(ty, 0) ** 2)
-    nut = np.sqrt((dx / half_w) ** 2 + ((Y - cy) / 8.5) ** 2 + ((Z - (Z_BACK + 6.5)) / 6.4) ** 2) - 1
-    nut = np.maximum(nut * 6, Z - (Z_FRONT - 0.4))
-    F = np.minimum(F, nut)
-
-    # stem from the mount neck to the burr
-    stem = seg_dist(X, Y, NECK[0], NECK[1] - 2, BURR_C[0] - 1.0, BURR_C[1] - BURR_R + 2) - 3.6
-    stem = np.maximum(stem, np.maximum(NECK_Z[0] - Z, Z - NECK_Z[1]))
+    # brown stem from the mount neck up into the burr
+    stem = seg_dist(P[:, 0], P[:, 1], NECK[0], NECK[1] - 2, *STEM_END) - 3.6
+    stem = np.maximum(stem, np.maximum(NECK_Z[0] - P[:, 2], P[:, 2] - NECK_Z[1]))
     F = np.minimum(F, stem)
-    return np.maximum(F, Z_BACK - Z)
+    F = np.maximum(F, Z_BACK - P[:, 2])
+    return F.reshape(X.shape)
 
 
 def make_burr():
     ear = to_mf(trimesh.load(EAR))
     mount = ear ^ box([-40, -40, -40], [40, MOUNT_CUT_Y, 40])
     burr = mesh_from_field(burr_field, [-15, MOUNT_CUT_Y - 6, Z_BACK - 1], [30, 95, Z_FRONT + 1], 0.15)
-    left = to_tm(mount + to_mf(decimate(burr, 0.01)))
+    left = to_tm(mount + to_mf(decimate(burr, 0.02)))
     right = left.copy()
     right.apply_transform(np.diag([-1, 1, 1, 1]))
     return left, right

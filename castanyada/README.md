@@ -4,7 +4,7 @@
 
 A roasted-chestnut skin for **La Castanyada**, the Catalan autumn festivity celebrated on the night of 31 October / 1 November with *castanyes torrades* (roasted chestnuts), *moniatos* (sweet potatoes) and *panellets*.
 
-The body becomes a big glossy chestnut, with the classic roasting cross cut opened on the front to show the golden flesh. The antennas are chestnut burrs (*eriçons*) split open with a chestnut inside, and a small chestnut tip with its tuft sits on top of the head.
+The body becomes a big glossy chestnut, with the classic roasting cross cut opened on the front to show the golden flesh. The antennas are brown stems ending in a spiky chestnut burr (*eriçó*), still closed, like it hangs on the tree. A small chestnut tip with its tuft sits on top of the head.
 
 <br clear="left">
 
@@ -19,7 +19,7 @@ All files are in [`stl/`](stl).
 |---|---|---|---|
 | `Chestnut_body_front.stl` | 1 | Brown | Front half with the roasting cross cut |
 | `Chestnut_body_back.stl` | 1 | Brown | Back half |
-| `Burr_antenna_L.stl` / `Burr_antenna_R.stl` | 1 each | Green | Replace the antennas, same mount as the bat wings of the pumpkin skin |
+| `Burr_antenna_L.stl` / `Burr_antenna_R.stl` | 1 each | Brown (green burr painted) | Replace the antennas, same mount as the bat wings of the pumpkin skin |
 | `Chestnut_tip.stl` | 1 | Brown | Goes on top of the head, same base as the pumpkin stem |
 
 You will also need:
@@ -33,10 +33,10 @@ You will also need:
 
 2. **3D print the parts**
    - Body halves: print them standing on the flat split face, with supports where your slicer asks for them. Low infill (10 to 15%) is enough and keeps the parts light.
-   - Burr antennas: print them like the pumpkin bat wings, lying on their flat back. The spikes don't need supports; the round antenna mount may.
+   - Burr antennas: print them like the pumpkin bat wings, lying on their flat back. The burr is a dome with a flat back, so it doesn't need supports; the round antenna mount may. The spikes are small and blunt (about 1.5 mm wide at the base), so print them with a 0.4 mm nozzle or smaller and a slow outer wall.
    - Chestnut tip: print it upright with supports under the curved base.
 
-   You can print directly in brown and green filament to reduce painting.
+   You can print directly in brown filament and only paint the burrs green.
 
 3. **Paint the parts**
    If you printed in white, or want more detail, we suggest:
@@ -44,7 +44,8 @@ You will also need:
    - **Base scar** (the rough band at the bottom, below the small groove): Beige, RAL 1001, matte
    - **Inside of the cross cut** (the chestnut flesh): Sand yellow, RAL 1002
    - **Roasted look**: dry-brush a little dark brown or black along the curled lips of the cut
-   - **Burrs**: Yellow green, RAL 6018, with the spike tips dry-brushed in pale yellow. Paint the chestnut inside the burr nut brown.
+   - **Antenna stems**: the same nut brown as the body
+   - **Burrs**: Yellow green, RAL 6018, or a slightly darker green. Dry-brush the spike tips in light brown, so they look like a burr just starting to ripen.
    - **Tuft** of the chestnut tip: beige or off-white
 
 4. **Insert the pins**
@@ -56,7 +57,9 @@ You will also need:
    - Stick the chestnut tip on top of the head with thin double-sided tape. Don't paint or glue anything directly on the robot.
 
 6. **Change the antennas motors configuration** (safety)
-   The burrs weigh about the same as the bat wings, but they are round and wider. If you want to make them move safely, you can [change the configuration of the antennas motors in the configuration file](https://github.com/pollen-robotics/reachy_mini/blob/1c347437881846b4ea3f293838baf11323c3e536/src/reachy_mini/assets/config/hardware_config.yaml#L144-L145), especially the limits of the motors position, to avoid any collision between the burrs and the head or body.
+   The burr antennas weigh about the same as the bat wings (about 9.5 cm³ of plastic against 9 cm³), but the burr is round and wider. If you want to make them move safely, you can [change the configuration of the antennas motors in the configuration file](https://github.com/pollen-robotics/reachy_mini/blob/1c347437881846b4ea3f293838baf11323c3e536/src/reachy_mini/assets/config/hardware_config.yaml#L144-L145), especially the limits of the motors position, to avoid any collision between the burrs and the head or body.
+
+<img src="assets/castanyada-burr-antenna.png" alt="Burr antenna, front and side" width="400">
 
 <img src="assets/castanyada-parts.png" alt="Castanyada skin parts" width="600">
 
