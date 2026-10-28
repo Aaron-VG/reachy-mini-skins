@@ -5,8 +5,9 @@
   A brown stem ends in a closed burr, as it grows on the tree: a flat-backed
   dome covered in small blunt spikes. It stays inside the z range of the bat
   wing (-13.2..0 mm) so it does not get closer to the head than the original.
-* Chestnut tip ("la punta"): sits on top of the head like the pumpkin stem,
-  reusing the stem's base so it follows the shape of the head.
+* Chestnut tip ("la punta"): optional alternative to the headscarf, sits on
+  top of the bare head like the pumpkin stem, reusing the stem's base so it
+  follows the shape of the head.
 
 Run from the repository root:
     python castanyada/tools/make_accessories.py
