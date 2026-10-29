@@ -2,9 +2,10 @@
 
 The scarf covers the top, sides and back of the head, frames the face and is
 knotted under the chin, like the traditional castanyera selling chestnuts.
-It is printed in two halves split at z = 21.5 mm, the same split as the
-Christmas tree head cover, and joined with 3 self-tapping screws hidden in
-the folded edge of the scarf.
+It is printed in two halves split around z = 21.5 mm, the same split as the
+Christmas tree head cover. The halves overlap like two layers of fabric (the
+outer layer of the back half laps over the front half), so the seam stays
+discreet, and they are held on the head with thin double-sided tape.
 
 The fit is taken from the inner surface of the Christmas tree head cover
 (measured by ray casting from the middle of the head). The eye openings and
@@ -42,12 +43,9 @@ ANTENNA_HOLES = [(-53.0, 19.3, -36.1), (53.0, 19.3, -36.1)]
 ANTENNA_OPEN_R = 16.0                 # keep the antenna mount free around each hole
 ANTENNA_THIN_R = 30.0                 # thinner, smooth fabric around the antennas
 
-FOLD_OFFSET, FOLD_R = 5.8, 5.6        # folded edge (ridge) along the split, hides the screws
-FOLD_LOW_Y = -36.0
-SCREW_SIDE_Y = -12.0
-SCREW_TAB = 4.0                       # back tab thickness, as on the tree head cover
-SCREW_CLEAR_R, SCREW_PILOT_R, SCREW_DEPTH = 1.45, 1.0, 6.5
-SCREW_ACCESS_R = 2.7
+LAP = 8.0                             # overlap of the two halves at the seam (mm)
+LAP_LAYER = 1.2                       # thickness of each layer in the overlap (mm)
+JOINT_GAP = 0.15                      # clearance between the halves, on each side (mm)
 
 KNOT_C = (0.0, -34.0)                 # (x, y) of the chin knot on the front face
 
@@ -100,24 +98,6 @@ def head_signed_distance(axes, th, ph, rmap):
     d_out = ndimage.distance_transform_edt(~occ).astype(np.float32)
     d_in = ndimage.distance_transform_edt(occ).astype(np.float32)
     return (d_out - d_in) * res, occ
-
-
-def fold_line(occ, axes):
-    """Folded edge of the scarf: head outline in the split plane, offset outwards."""
-    from skimage.measure import find_contours
-    xs, ys, zs = axes
-    res = xs[1] - xs[0]
-    k = int(round((SPLIT_Z - zs[0]) / res))
-    sl = ndimage.binary_fill_holes(occ[:, :, k])
-    dist = ndimage.distance_transform_edt(~sl) * res
-    cont = max(find_contours(dist, CLEARANCE + FOLD_OFFSET), key=len)
-    pts = np.c_[xs[0] + cont[:, 0] * res, ys[0] + cont[:, 1] * res]
-    pts = pts[pts[:, 1] > FOLD_LOW_Y]
-    # resample densely for the distance queries
-    seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
-    keep = np.r_[True, seg < 5]                       # drop the jump across the bottom
-    pts = pts[keep]
-    return np.c_[pts, np.full(len(pts), SPLIT_Z)]
 
 
 # --- the scarf --------------------------------------------------------------
@@ -174,11 +154,6 @@ def main():
     xs, ys, zs = axes
     print("head distance field ...")
     dH, occ = head_signed_distance(axes, th, ph, rmap)
-    fold = fold_line(occ, axes)
-    top = fold[np.argmin(np.abs(fold[:, 0]) + (fold[:, 1] < 30) * 1e3)]
-    sides = [fold[np.argmin(np.abs(fold[:, 1] - SCREW_SIDE_Y) + (fold[:, 0] * s < 0) * 1e3)] for s in (-1, 1)]
-    screws = [top] + sides
-    print("screws at", [np.round(s[:2], 1).tolist() for s in screws])
 
     # front face height along the chin, for the knot
     kx_i = np.argmin(np.abs(xs - KNOT_C[0]))
@@ -187,7 +162,7 @@ def main():
 
     shape = (len(xs), len(ys), len(zs))
     F = np.empty(shape, np.float32)
-    fold_tree = cKDTree(fold)
+    back_side = np.empty(shape, np.float32)       # negative in the back half
     Yg, Zg = np.meshgrid(ys, zs, indexing="ij")
     print("scarf field ...")
     for i, x in enumerate(xs):
@@ -214,25 +189,15 @@ def main():
         shell = np.maximum(CLEARANCE - d, d - (CLEARANCE + T))
         shell = np.maximum(shell, -e)
 
-        # folded edge along the split line, the screws hide in it
-        dist_fold, _ = fold_tree.query(P)
-        ridge = np.maximum(dist_fold.reshape(Y.shape) - FOLD_R, CLEARANCE - d)
-        ridge = np.maximum(ridge, -(d_ant - ANTENNA_OPEN_R))
-
         knot = np.maximum(knot_field(X, Y, Z, z_face), CLEARANCE - d)
-        F[i] = np.minimum(np.minimum(shell, ridge), knot)
+        F[i] = np.minimum(shell, knot)
 
-    # screws: clearance hole + access in the back half, pilot hole in the front half
-    X, Y, Z = xs[:, None, None], ys[None, :, None], zs[None, None, :]
-    for sx, sy, _ in screws:
-        r = np.sqrt((X - sx) ** 2 + (Y - sy) ** 2)
-        clear = np.maximum(r - SCREW_CLEAR_R, np.maximum(SPLIT_Z - SCREW_TAB - 0.01 - Z, Z - SPLIT_Z))
-        access = np.maximum(r - SCREW_ACCESS_R, np.maximum(-5 - Z, Z - (SPLIT_Z - SCREW_TAB)))
-        pilot = np.maximum(r - SCREW_PILOT_R, np.maximum(SPLIT_Z - Z, Z - (SPLIT_Z + SCREW_DEPTH)))
-        F = np.maximum(F, -np.minimum(np.minimum(clear, access), pilot))
+        # lap joint: the inner layer splits at SPLIT_Z, the outer layer LAP further forward
+        mid = CLEARANCE + LAP_LAYER
+        back_side[i] = np.minimum(Z - SPLIT_Z, np.maximum(Z - (SPLIT_Z + LAP), mid - d))
 
-    for name, side in (("Headscarf_front", Z - SPLIT_Z), ("Headscarf_back", SPLIT_Z - Z)):
-        m = mesh_from_volume(np.maximum(F, -side), axes)
+    for name, side in (("Headscarf_front", -back_side), ("Headscarf_back", back_side)):
+        m = mesh_from_volume(np.maximum(F, side + JOINT_GAP), axes)
         m = max(m.split(only_watertight=False), key=lambda p: abs(p.volume))
         for tol in (0.05, 0.03, 0.015):            # coarsest simplification that stays watertight
             small = decimate(m, tol)

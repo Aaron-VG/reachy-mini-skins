@@ -26,8 +26,7 @@ All files are in [`stl/`](stl).
 
 You will also need:
 - 6 [pins 3mm x 16mm](../pumpkin/README.md#steps-to-make-it) (the same ones as the pumpkin and Christmas tree skins)
-- 3 self-tapping screws 2.5mm x 6mm for the headscarf (the same ones as the Christmas tree head)
-- Thin double-sided tape, only if you use the chestnut tip
+- Thin double-sided tape, to hold the headscarf (or the chestnut tip) on the head
 
 ### Steps to make it
 
@@ -37,7 +36,7 @@ You will also need:
 2. **3D print the parts**
    - Body halves: print them standing on the flat split face, with supports where your slicer asks for them. Low infill (10 to 15%) is enough and keeps the parts light.
    - Burr antennas: print them like the pumpkin bat wings, lying on their flat back. The burr is a dome with a flat back, so it doesn't need supports; the round antenna mount may. The spikes are small and blunt (about 1.5 mm wide at the base), so print them with a 0.4 mm nozzle or smaller and a slow outer wall.
-   - Headscarf halves: print each one standing on its flat split face, with supports. The small flowers on the scarf are in relief (0.6 mm) to make painting them easier, so a 0.2 mm layer height or finer keeps them crisp.
+   - Headscarf halves: print each one standing on the edge where the two halves meet, with supports (that edge has a small step for the overlap, so it isn't completely flat). The small flowers on the scarf are in relief (0.6 mm) to make painting them easier, so a 0.2 mm layer height or finer keeps them crisp.
    - Chestnut tip (optional): print it upright with supports under the curved base.
 
    You can print the chestnut parts in brown filament and the headscarf in red or black, then only paint the details.
@@ -59,11 +58,11 @@ You will also need:
 5. **Assemble everything**
    - Snap the body halves together around Reachy Mini.
    - Fit the burr antennas the same way as the pumpkin bat wings: `Burr_antenna_L` goes where `L_bat_ear_low` goes, and `Burr_antenna_R` where `R_bat_ear_low` goes.
-   - Fit the headscarf like the Christmas tree head cover. Take the antennas off first: the back half slides on from behind, and the antenna mounts can't pass sideways through the antenna openings. Place the front half over the face, then slide the back half on from behind. From the back, push the 3 screws through the holes in the back half's folded edge (one on top, one on each side) and screw them into the front half. Then put the antennas back on.
+   - Fit the headscarf like the Christmas tree head cover. Take the antennas off first: the back half slides on from behind, and the antenna mounts can't pass sideways through the antenna openings. Put a few small pieces of thin double-sided tape on the head (top and sides), place the front half over the face, then slide the back half on from behind: its outer edge laps over the front half by 8 mm, like two layers of fabric, so the seam stays discreet. Then put the antennas back on.
    - If you prefer the bare head, stick the chestnut tip on top of the head with thin double-sided tape instead. Don't paint or glue anything directly on the robot.
 
 6. **Change the antennas motors configuration** (safety)
-   The burr antennas weigh about the same as the bat wings (about 9.5 cm³ of plastic against 9 cm³), but the burr is round and wider. The headscarf is 3 to 4 mm thick on the head, and its folded edge sticks out up to 11 mm on the top and sides. Before running any app, move the head and the antennas slowly through their full range and check that nothing rubs. If you want to make them move safely, you can [change the configuration of the antennas motors in the configuration file](https://github.com/pollen-robotics/reachy_mini/blob/1c347437881846b4ea3f293838baf11323c3e536/src/reachy_mini/assets/config/hardware_config.yaml#L144-L145), especially the limits of the motors position, to avoid any collision between the burrs and the head or body.
+   The burr antennas weigh about the same as the bat wings (about 9.5 cm³ of plastic against 9 cm³), but the burr is round and wider. The headscarf is 3 to 4 mm thick on the head, with the knot sticking out about 10 mm under the chin. Before running any app, move the head and the antennas slowly through their full range and check that nothing rubs. If you want to make them move safely, you can [change the configuration of the antennas motors in the configuration file](https://github.com/pollen-robotics/reachy_mini/blob/1c347437881846b4ea3f293838baf11323c3e536/src/reachy_mini/assets/config/hardware_config.yaml#L144-L145), especially the limits of the motors position, to avoid any collision between the burrs and the head or body.
 
 <img src="assets/castanyada-burr-antenna.png" alt="Burr antenna, front and side" width="400">
 
@@ -82,6 +81,6 @@ python castanyada/tools/make_accessories.py  # burr antennas and chestnut tip
 python castanyada/tools/make_head.py         # headscarf halves, about 5 minutes
 ```
 
-Parameters such as the chestnut silhouette, the size of the cross cut, the pin and screw positions, or the size of the face opening are listed at the top of each script. The headscarf takes the shape of the head from the inside of the Christmas tree head cover.
+Parameters such as the chestnut silhouette, the size of the cross cut, the pin positions, or the size of the face opening are listed at the top of each script. The headscarf takes the shape of the head from the inside of the Christmas tree head cover.
 
 Bona Castanyada! 🍂
